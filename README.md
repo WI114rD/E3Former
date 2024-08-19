@@ -1,4 +1,4 @@
-# E$^3$Former: Towards Effective and Efficient Online Ensemble Time Series Forecasting for Cold Starts
+# E^3Former: Towards Effective and Efficient Online Ensemble Time Series Forecasting for Cold Starts
 
 ## Requirement
 
