@@ -11,21 +11,6 @@ def normalize(W):
     W_norm = torch.relu(W_norm - 1) + 1
     W = W/ W_norm
     return W
-
-class OnlineLinear(nn.Module):
-    def __init__(self, in_features, out_features, gamma=0.9, bias=True):
-        super().__init__()
-        if out_features > in_features:
-            if out_features % in_features != 0:
-                raise ValueError("out_features must be divisible by in_features")
-            self.conv1d = SamePadConv(in_features, out_features, kernel_size=1, gamma=gamma, bias=bias)
-        else:
-            self.conv1d = SamePadConv_v2(in_features, out_features, kernel_size=1, gamma=gamma, bias=bias)
-    def forward(self, x): # [B, L, C]
-        x = x.transpose(-2,-1)
-        x = self.conv1d(x)
-        x = x.transpose(-2,-1)
-        return x
     
 class SamePadConv_v3(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dilation=1, groups=1, gamma=0.9, bias=True):
