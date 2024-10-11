@@ -4,8 +4,8 @@ i=1
 ns=(1 )
 bszs=(1 )
 lens=(60 30 10 1)
-tasks=('FaaS_small' 'FaaS_c14' 'FaaS_medium' 'IaaS_c7' 'IaaS_c14' 'IaaS_c20' 'ETTh2_test')
-methods=('mimo_patch_greedy' 'onenet_fsnet' 'mimo_patch' 'mimo_patchv1' 'fsnet' 'fsnet_time' 'itransformer' 'patch' 'timesnet' 'dlinear')
+tasks='ETTh2_test')
+methods=('onenet_fsnet' 'mimo_patch' 'fsnet' 'fsnet_time' 'itransformer' 'timesnet' 'dlinear')
 for n in ${ns[*]}; do
 for bsz in ${bszs[*]}; do
 for len in ${lens[*]}; do
