@@ -5,7 +5,7 @@ ns=(1 )
 bszs=(1 )
 lens=(60 30 10 1)
 tasks=('ETT_transfer')
-methods=('onenet_fsnet' 'mimo_patch' 'fsnet' 'fsnet_time' 'itransformer' 'timesnet' 'dlinear')
+methods=('E3Former' 'onenet_fsnet' 'fsnet' 'fsnet_time' 'itransformer' 'timesnet' 'dlinear')
 for n in ${ns[*]}; do
 for bsz in ${bszs[*]}; do
 for len in ${lens[*]}; do
