@@ -1,0 +1,577 @@
+% ---------------------------------------------------------------
+% Revised statement and proof of Theorem 2 (main paper) /
+% Theorem 1 (supplementary material) of
+%   "Uncertainty-Aware Online Ensemble Transformer for Accurate
+%    Cloud Workload Forecasting in Predictive Auto-Scaling" (E3Former)
+%
+% This note supersedes the previous version of the theorem, whose
+% *statement* used the event "all H coordinates fall outside their
+% intervals" instead of the complement of the joint-coverage event
+% in Eq. (1) of the main paper.
+% ---------------------------------------------------------------
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue]{hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\PR}{\mathbb{P}}
+\newcommand{\ind}{\mathbf{1}}
+\newcommand{\Lcal}{\mathcal{L}_{\mathrm{cal}}}
+\newcommand{\Lcop}{\mathcal{L}_{\mathrm{cop}}}
+\newcommand{\err}{\mathrm{err}}
+\newcommand{\horizon}{[H]}
+
+\title{Revised Statement and Proof of the Validity of the\\
+Adaptive Conformal Uncertainty Quantifier (ACUQ)}
+\author{Supplementary note for \textsc{E3Former}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note corrects the statement of Theorem~2 of the main paper (Theorem~1 of the
+previous supplementary material) and gives a complete, self-contained proof.
+The previous statement was expressed through the event
+$\prod_{j=1}^{H}\ind\{x_t^{j}\notin C_t^{j}\}$, i.e.\ ``\emph{all} $H$ future
+values fall outside their intervals''. For $H>1$ this event is \emph{not} the
+complement of the joint-coverage event of Eq.~(1) of the main paper, which
+requires \emph{all} $H$ future values to fall \emph{inside} their intervals; the
+complement of the latter is ``\emph{at least one} value falls outside''. The
+error is confined to the way the theorem was \emph{written}: both
+Algorithm~1 and the proof operate on the joint miscoverage indicator
+$\err_t=\ind\{Y_t\notin C_t\}=1-\prod_{j=1}^{H}\ind\{x_t^{j}\in C_t^{j}\}$.
+Section~\ref{sec:statement} states the corrected theorem, Section~\ref{sec:fixed}
+recalls finite-sample joint validity for a fixed miscoverage rate, and
+Section~\ref{sec:adaptive} proves the corrected long-run guarantee with an
+explicit $O(1/(\gamma_Q T))$ rate and without any exchangeability assumption.
+Section~\ref{sec:remarks} discusses the scope of the result and
+Section~\ref{sec:edits} lists the resulting edits to the paper.
+\end{abstract}
+
+\section{Setting and notation}
+\label{sec:setting}
+
+Let $H\ge 1$ be the forecast horizon and write $\horizon=\{1,\dots,H\}$. At each
+online time step $t=1,2,\dots$ the point-forecasting model (the Online
+Calibrator of \textsc{E3Former}) outputs
+$\widehat{Y}_t=(\hat{x}_t^{1},\dots,\hat{x}_t^{H})\in\R^{H}$, and the
+corresponding ground truth is $Y_t=(x_t^{1},\dots,x_t^{H})\in\R^{H}$, where
+$x_t^{j}$ denotes the realised value at lead time $j$. The nonconformity score
+at lead time $j$ is
+\begin{equation}
+  s_t^{j}\;:=\;\bigl\lVert x_t^{j}-\hat{x}_t^{j}\bigr\rVert ,
+  \qquad j\in\horizon .
+  \label{eq:score}
+\end{equation}
+
+The quantifier returns a \emph{box} (a hyper-rectangle)
+\begin{equation}
+  C_t\;=\;C_t^{1}\times C_t^{2}\times\cdots\times C_t^{H},
+  \qquad
+  C_t^{j}\;=\;\bigl\{y\in\R:\ \lVert y-\hat{x}_t^{j}\rVert\le s_t^{*,j}\bigr\},
+  \label{eq:box}
+\end{equation}
+whose half-widths $s_t^{*,1},\dots,s_t^{*,H}$ are constructed below. Because
+$C_t$ is a product set,
+\begin{equation}
+  Y_t\in C_t
+  \iff
+  \forall j\in\horizon:\ x_t^{j}\in C_t^{j}
+  \iff
+  \forall j\in\horizon:\ s_t^{j}\le s_t^{*,j}.
+  \label{eq:boxequiv}
+\end{equation}
+
+\paragraph{The quantity of interest.}
+Eq.~(1) of the main paper asks for \emph{joint} (simultaneous, full-horizon)
+validity, $\PR\{\forall j\in\horizon:\ x_t^{j}\in C_t^{j}\}\ge 1-\alpha$.
+Accordingly we define the \emph{joint miscoverage indicator}
+\begin{equation}
+  \err_t
+  \;:=\;\ind\{Y_t\notin C_t\}
+  \;=\;1-\prod_{j=1}^{H}\ind\bigl\{x_t^{j}\in C_t^{j}\bigr\}
+  \;=\;\ind\bigl\{\exists\, j\in\horizon:\ x_t^{j}\notin C_t^{j}\bigr\}
+  \;\in\;\{0,1\}.
+  \label{eq:err}
+\end{equation}
+Eq.~\eqref{eq:err} is precisely the indicator used in the online update
+Eq.~(18) of the main paper and in line~9 of Algorithm~1, where the
+\emph{vector} $Y_t$ is tested against the \emph{box} $C_t$.
+
+\paragraph{Loss set and marginals.}
+Let $L_c=|\mathcal{L}_t|$ and let
+$\mathcal{L}_t=\{\ell_\tau\}_{\tau=t-L_c+1}^{t}$ with
+$\ell_\tau=(\ell_\tau^{1},\dots,\ell_\tau^{H})$ be the sliding window of past
+score vectors. $\mathcal{L}_t$ is split uniformly at random into a
+\emph{marginal} set $\Lcal$ and a \emph{copula} set $\Lcop$. For each
+$j\in\horizon$ the randomised empirical marginal predictive distribution is
+\begin{equation}
+  \widehat{F}_j(s)
+  \;:=\;\frac{1}{|\Lcal|+1}
+  \Bigl(\tau+\sum_{\ell\in\Lcal}\ind\{\ell^{j}<s\}\Bigr),
+  \qquad \tau\sim\mathrm{Unif}(0,1),
+  \label{eq:cdf}
+\end{equation}
+and $\widehat{F}_j^{-1}(u):=\inf\{s\in\R:\widehat{F}_j(s)\ge u\}$ denotes its
+generalised inverse.
+
+\paragraph{Partial order and empirical copula.}
+For $u,v\in[0,1]^{H}$ write $u\preceq v$ iff $u_j\le v_j$ for all
+$j\in\horizon$. Map every element of the copula set to the unit cube,
+\begin{equation}
+  U\;:=\;\bigl\{u^{i}\bigr\}_{i\in\Lcop},
+  \qquad
+  u^{i}\;=\;\bigl(\widehat{F}_1(s_i^{1}),\dots,\widehat{F}_H(s_i^{H})\bigr)
+  \in[0,1]^{H},
+  \label{eq:U}
+\end{equation}
+and define the \emph{empirical copula} (lower-orthant form, with the
+finite-sample $+1$ correction)
+\begin{equation}
+  \widehat{Q}(u)
+  \;:=\;\frac{1}{|\Lcop|+1}
+  \sum_{i\in\Lcop}\ \prod_{j=1}^{H}\ind\bigl\{u_j^{i}\le u_j\bigr\},
+  \qquad u\in[0,1]^{H}.
+  \label{eq:copula}
+\end{equation}
+Given a working miscoverage level $a\in\R$, the quantifier selects
+\begin{equation}
+  u^{*}(a)\;\in\;\argmin_{u\in[0,1]^{H}}\ \sum_{j=1}^{H}u_j
+  \qquad\text{subject to}\qquad
+  \widehat{Q}(u)\;\ge\;1-a ,
+  \label{eq:ustar}
+\end{equation}
+and sets $s^{*,j}=\widehat{F}_j^{-1}\bigl(u^{*}_j(a)\bigr)$ for $j\in\horizon$,
+which yields the box \eqref{eq:box}. Since $\widehat{Q}$ is a right-continuous
+step function that only increases at the observed vectors, the search in
+\eqref{eq:ustar} may be restricted without loss to the finite grid
+$\{u^{i}\}_{i\in\Lcop}\cup\{\boldsymbol{1}\}$; the minimum is therefore
+attained, and remaining ties are broken deterministically by lexicographic
+order.
+
+\begin{remark}[Two typographical corrections in the main paper]
+\label{rem:eq1516}
+Eq.~\eqref{eq:copula}--\eqref{eq:ustar} correct Eq.~(15)--(16) of the main
+paper, which were displayed with the reversed comparison
+$\ind\{u^i_j\ge u_j\}$ (an upper-orthant / survival form) together with the
+constraint $Q(\cdot)\le\alpha_t$. Since the coverage event
+\eqref{eq:boxequiv} is a \emph{lower}-orthant event $u_t\preceq u^{*}$, the
+quantity that must be controlled is the lower-orthant empirical copula
+\eqref{eq:copula} at level $1-\alpha_t$, which is exactly the multivariate
+quantile $Q(U;\alpha)$ used in the proof of the previous supplementary
+material and in \cite{sunyu2024}. Appending the point
+$\boldsymbol{\infty}$ to $\Lcop$, as done in the paper, contributes $0$ to the
+numerator of \eqref{eq:copula} and $1$ to its denominator; we have therefore
+absorbed it into the normalisation $|\Lcop|+1$.
+\end{remark}
+
+\paragraph{Adaptive miscoverage rate.}
+The working level is itself updated online. With target level
+$\alpha\in(0,1)$, step size $\gamma_Q>0$, initialisation
+$\alpha_1=\alpha$, and $C_t=C_t(\alpha_t)$ obtained from
+\eqref{eq:ustar} with $a=\alpha_t$, the update of Eq.~(18) of the main paper
+reads
+\begin{equation}
+  \alpha_{t+1}\;=\;\alpha_t+\gamma_Q\bigl(\alpha-\err_t\bigr),
+  \qquad t=1,2,\dots
+  \label{eq:update}
+\end{equation}
+
+\begin{definition}[Saturation conventions]
+\label{def:conventions}
+As in adaptive conformal inference \cite{gibbs2021}, the construction
+\eqref{eq:ustar} is extended to levels outside $(0,1)$ by
+\begin{enumerate}[label=(C\arabic*),leftmargin=*]
+  \item if $a\le 0$, or if the constraint in \eqref{eq:ustar} is infeasible on
+        $[0,1]^{H}$, set $s^{*,j}=+\infty$ for all $j$, i.e.\ $C_t=\R^{H}$;
+  \item if $a\ge 1$, set $C_t=\emptyset$.
+\end{enumerate}
+(C1) and (C2) are the multivariate analogues of
+$\widehat{Q}_t(1-a)=+\infty$ for $a\le 0$ and
+$\widehat{Q}_t(1-a)=-\infty$ for $a\ge 1$ in \cite[Sec.~2]{gibbs2021}. They are
+what makes the argument of Lemma~\ref{lem:bounded} deterministic. Note that the
+infeasible branch of (C1) is triggered whenever
+$\alpha_t<1/(|\Lcop|+1)$, since $\widehat{Q}(\boldsymbol{1})
+=|\Lcop|/(|\Lcop|+1)<1$, and that this band is genuinely reachable rather than a
+vacuous edge case: with the settings of the paper, $|\mathcal{L}_t|=60$ so
+$|\Lcop|\approx 30$, $\gamma_Q=0.05$ and $\alpha=0.1$, the update
+\eqref{eq:update} decreases $\alpha_t$ by $\gamma_Q(1-\alpha)=0.045$ at every
+miscovered step, so two consecutive miscoverages starting from $\alpha_1=0.1$
+give $\alpha_3=0.01<1/31\approx 0.032$. Both branches of (C1) return
+$u^{*}=\boldsymbol{1}$ and $C_t=\R^{H}$, which is the conservative direction and
+is what Lemma~\ref{lem:saturation} requires.
+\end{definition}
+
+The two conventions have the following immediate but crucial consequence, which
+is stated for the \emph{joint} indicator \eqref{eq:err}.
+
+\begin{lemma}[Saturation]
+\label{lem:saturation}
+For every $t$: \; (i) if $\alpha_t\le 0$, or if the constraint in
+\eqref{eq:ustar} is infeasible at level $\alpha_t$, then $\err_t=0$; \;
+(ii) if $\alpha_t\ge 1$ then $\err_t=1$.
+\end{lemma}
+
+\begin{proof}
+(i) In either case (C1) gives $C_t=\R^{H}$, hence $x_t^{j}\in C_t^{j}$ for every $j\in\horizon$,
+so $\prod_{j=1}^{H}\ind\{x_t^{j}\in C_t^{j}\}=1$ and, by \eqref{eq:err},
+$\err_t=0$. (ii) By (C2), $C_t=\emptyset$, hence $Y_t\notin C_t$ and
+$\err_t=1$.
+\end{proof}
+
+\section{Corrected statement}
+\label{sec:statement}
+
+\begin{theorem}[Long-run full-horizon validity of ACUQ; corrected form of
+Theorem~2]
+\label{thm:main}
+Let $\{C_t\}_{t\ge1}$ be the sequence of prediction boxes produced by the
+Adaptive Conformal Uncertainty Quantifier (Algorithm~1) with target
+miscoverage rate $\alpha\in(0,1)$, initialisation $\alpha_1=\alpha$, update
+rate $\gamma_Q>0$, update rule \eqref{eq:update} and conventions
+(C1)--(C2). Then the empirical frequency of \emph{joint} miscoverage converges
+to $\alpha$:
+\begin{equation}
+  \lim_{T\to\infty}\frac{1}{T}\sum_{t=1}^{T}
+  \Bigl(1-\prod_{j=1}^{H}\ind\bigl\{x_t^{j}\in C_t^{j}\bigr\}\Bigr)
+  \;=\;\alpha
+  \qquad\text{almost surely,}
+  \label{eq:main}
+\end{equation}
+equivalently
+$\displaystyle\lim_{T\to\infty}\frac{1}{T}\sum_{t=1}^{T}
+\ind\{\exists j\in\horizon: x_t^{j}\notin C_t^{j}\}=\alpha$, equivalently
+$\displaystyle\lim_{T\to\infty}\frac{1}{T}\sum_{t=1}^{T}
+\prod_{j=1}^{H}\ind\{x_t^{j}\in C_t^{j}\}=1-\alpha$,
+i.e.\ the event of Eq.~(1) of the main paper occurs with long-run frequency
+$1-\alpha$. Moreover the convergence is \emph{deterministic} with an explicit
+rate: for every $T\ge1$,
+\begin{equation}
+  \Biggl\lvert\,\frac{1}{T}\sum_{t=1}^{T}\err_t-\alpha\Biggr\rvert
+  \;\le\;\frac{\max\{\alpha_1,\,1-\alpha_1\}+\gamma_Q}{\gamma_Q\,T}
+  \;=\;O\!\left(\frac{1}{\gamma_Q T}\right).
+  \label{eq:rate}
+\end{equation}
+No assumption on the data-generating process --- in particular neither
+exchangeability nor stationarity --- is required.
+\end{theorem}
+
+\begin{remark}[What was wrong, and why it was only the statement]
+\label{rem:whatwaswrong}
+The previous version of the theorem displayed the summand
+$\prod_{j=1}^{H}\ind\{x_t^{j}\notin C_t^{j}\}$. For $H>1$,
+\begin{equation}
+  \prod_{j=1}^{H}\ind\bigl\{x_t^{j}\notin C_t^{j}\bigr\}
+  \;\le\;
+  \ind\bigl\{\exists j:\,x_t^{j}\notin C_t^{j}\bigr\}
+  \;=\;1-\prod_{j=1}^{H}\ind\bigl\{x_t^{j}\in C_t^{j}\bigr\},
+  \label{eq:strictineq}
+\end{equation}
+and the inequality is strict as soon as some but not all coordinates are
+violated; the two events coincide only for $H=1$. Consequently the previous
+statement did \emph{not} imply the guarantee of Eq.~(1). A sharp
+counterexample: let $H=2$ and suppose coordinate~$1$ is violated at odd $t$
+only, coordinate~$2$ at even $t$ only, and both simultaneously with frequency
+$\alpha$. Then the ``all-outside'' average equals $\alpha$ while the joint
+miscoverage frequency in \eqref{eq:main} tends to $1$. The correction is
+nevertheless confined to the way the theorem was typeset: the object that is
+actually fed to Eq.~(18)/Algorithm~1 and analysed below is the joint indicator
+\eqref{eq:err}, obtained by comparing the vector $Y_t$ with the box $C_t$.
+\end{remark}
+
+\section{Finite-sample joint validity for a fixed level}
+\label{sec:fixed}
+
+We first record the guarantee for a \emph{fixed} level $a=\alpha$, which is the
+copula-conformal ingredient of the construction and follows the classical
+conformal-prediction framework \cite{vovk2005,sunyu2024}. It requires
+exchangeability and is stated here only for completeness;
+Theorem~\ref{thm:main} does \emph{not} rely on it.
+
+\begin{assumption}[Exchangeability]
+\label{ass:exch}
+The score vectors $\{\ell_i\}_{i\in\Lcop}\cup\{(s_t^{1},\dots,s_t^{H})\}$ are
+exchangeable, and their marginal laws are atomless.
+\end{assumption}
+
+\begin{lemma}[Validity of the marginal predictive distributions
+\cite{vovk2017}]
+\label{lem:vovk}
+For every $j\in\horizon$, the randomised distribution $\widehat{F}_j$ of
+\eqref{eq:cdf} is a conformal predictive distribution: for a test score
+$s^{j}$ and any $0<a<1$,
+$\PR\bigl[\widehat{F}_j(s^{j})\le 1-a\bigr]=1-a$. In particular
+$\widehat{F}_j(s^{j})\sim\mathrm{Unif}(0,1)$.
+\end{lemma}
+
+\begin{proposition}[Joint validity at a fixed level; \cite{sunyu2024}]
+\label{prop:fixed}
+Let $u_t:=\bigl(\widehat{F}_1(s_t^{1}),\dots,\widehat{F}_H(s_t^{H})\bigr)$ and
+let $u^{*}=u^{*}(\alpha)$ be given by \eqref{eq:ustar}, with
+$s^{*,j}=\widehat{F}_j^{-1}(u_j^{*})$ and $C_t$ as in \eqref{eq:box}. Under
+Assumption~\ref{ass:exch},
+\begin{equation}
+  \PR\bigl[\,Y_t\in C_t\,\bigr]
+  \;=\;\PR\bigl[\forall j\in\horizon:\ x_t^{j}\in C_t^{j}\bigr]
+  \;\ge\;1-\alpha .
+  \label{eq:fixed}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+The proof reduces the \emph{joint box event} to a \emph{dominance event} in the
+unit cube and then applies the conformal symmetry argument.
+
+\emph{Step 1 (reduction).} By \eqref{eq:boxequiv} and
+$s^{*,j}=\widehat{F}_j^{-1}(u_j^{*})$,
+\begin{equation}
+  Y_t\in C_t
+  \iff \forall j\in\horizon:\ s_t^{j}\le\widehat{F}_j^{-1}(u_j^{*})
+  \iff \forall j\in\horizon:\ \widehat{F}_j(s_t^{j})\le u_j^{*}
+  \iff u_t\preceq u^{*},
+  \label{eq:reduction}
+\end{equation}
+where the middle equivalence uses that $\widehat{F}_j$ is non-decreasing
+(``$\Leftarrow$'' by monotonicity of $\widehat{F}_j^{-1}$, ``$\Rightarrow$'' up
+to a $\PR$-null set of ties, excluded because the score laws are atomless by
+Assumption~\ref{ass:exch}). Note that \eqref{eq:reduction} is an equivalence
+between two \emph{conjunctions over all $j\in\horizon$}: it is the
+full-horizon event of Eq.~(1), not a per-coordinate event.
+
+\emph{Step 2 (symmetry).} By \eqref{eq:ustar}, $u^{*}$ satisfies
+$\widehat{Q}(u^{*})\ge1-\alpha$, i.e.\
+$\#\{i\in\Lcop: u^{i}\preceq u^{*}\}\ge\lceil(1-\alpha)(|\Lcop|+1)\rceil$, and
+$u^{*}$ is a measurable function of $U$ alone. Writing
+$Q(U\cup\{\boldsymbol{\infty}\};\alpha):=u^{*}$, one has the quantile-stability
+property
+\[
+  u_t\preceq Q\bigl(U\cup\{\boldsymbol{\infty}\};\alpha\bigr)
+  \iff
+  u_t\preceq Q\bigl(U\cup\{u_t\};\alpha\bigr),
+\]
+because inserting $u_t$ in place of $\boldsymbol{\infty}$ does not change the
+selected quantile when $u_t$ is itself dominated by it. The right-hand event
+states that $u_t$ ranks among the
+$\lceil(1-\alpha)(|\Lcop|+1)\rceil$ ``innermost'' elements of the augmented
+set $U\cup\{u_t\}$ with respect to $\preceq$. Under
+Assumption~\ref{ass:exch} the law of this rank is invariant under permutations
+of the augmented set, whence
+\begin{equation}
+  \PR\bigl[u_t\preceq u^{*}\bigr]
+  \;\ge\;\frac{\bigl\lceil(1-\alpha)(|\Lcop|+1)\bigr\rceil}{|\Lcop|+1}
+  \;\ge\;1-\alpha .
+  \label{eq:rank}
+\end{equation}
+Combining \eqref{eq:reduction} and \eqref{eq:rank} gives \eqref{eq:fixed}.
+\end{proof}
+
+\section{Long-run validity of the adaptive scheme}
+\label{sec:adaptive}
+
+Proposition~\ref{prop:fixed} requires exchangeability, which is untenable for
+non-stationary cloud workloads. This motivates replacing the fixed $\alpha$ by
+the adaptive level $\alpha_t$ of \eqref{eq:update}. The resulting guarantee,
+stated in Theorem~\ref{thm:main}, is \emph{distribution-free} and requires
+\emph{no exchangeability}; the only structural requirement is that the
+construction obey the saturation conventions (C1)--(C2) of
+Definition~\ref{def:conventions}. We follow
+the argument of \cite{gibbs2021}, taking care that every step is carried out
+for the joint indicator \eqref{eq:err}.
+
+\begin{lemma}[Boundedness of the adaptive level]
+\label{lem:bounded}
+For every $t\in\N$, $\alpha_t\in[-\gamma_Q,\,1+\gamma_Q]$.
+\end{lemma}
+
+\begin{proof}
+Since $\err_t\in\{0,1\}$ and $\alpha\in(0,1)$, each increment satisfies
+\begin{equation}
+  \lvert\alpha_{t+1}-\alpha_t\rvert
+  =\gamma_Q\lvert\alpha-\err_t\rvert
+  \le\gamma_Q\max\{\alpha,\,1-\alpha\}
+  <\gamma_Q .
+  \label{eq:step}
+\end{equation}
+Suppose, for contradiction, that $\alpha_s<-\gamma_Q$ for some $s\in\N$. Since
+$\alpha_1=\alpha>0$ and, by \eqref{eq:step}, the sequence moves by strictly
+less than $\gamma_Q$ per step, there exists $t<s$ with
+$\alpha_t\in[-\gamma_Q,0)$ and $\alpha_{t+1}<\alpha_t$. However, $\alpha_t<0$
+implies, by Lemma~\ref{lem:saturation}(i), $\err_t=0$, and therefore
+\[
+  \alpha_{t+1}=\alpha_t+\gamma_Q(\alpha-\err_t)=\alpha_t+\gamma_Q\alpha>\alpha_t,
+\]
+a contradiction. Hence $\alpha_t\ge-\gamma_Q$ for all $t$. Symmetrically, if
+$\alpha_t>1$ then Lemma~\ref{lem:saturation}(ii) gives $\err_t=1$ and
+$\alpha_{t+1}=\alpha_t+\gamma_Q(\alpha-1)<\alpha_t$, so $\alpha_t$ can never
+exceed $1+\gamma_Q$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:main}]
+Summing the update \eqref{eq:update} over $t=1,\dots,T$ telescopes:
+\begin{equation}
+  \alpha_{T+1}
+  =\alpha_1+\gamma_Q\sum_{t=1}^{T}\bigl(\alpha-\err_t\bigr)
+  =\alpha_1+\gamma_Q T\alpha-\gamma_Q\sum_{t=1}^{T}\err_t .
+  \label{eq:telescope}
+\end{equation}
+Rearranging \eqref{eq:telescope} and dividing by $\gamma_Q T>0$,
+\begin{equation}
+  \frac{1}{T}\sum_{t=1}^{T}\err_t-\alpha
+  \;=\;\frac{\alpha_1-\alpha_{T+1}}{\gamma_Q T}.
+  \label{eq:exact}
+\end{equation}
+By Lemma~\ref{lem:bounded}, $\alpha_{T+1}\in[-\gamma_Q,1+\gamma_Q]$, and
+$\alpha_1=\alpha\in(0,1)$, so
+\begin{equation}
+  \lvert\alpha_1-\alpha_{T+1}\rvert
+  \le\max\bigl\{\alpha_1-(-\gamma_Q),\ (1+\gamma_Q)-\alpha_1\bigr\}
+  =\max\{\alpha_1,\,1-\alpha_1\}+\gamma_Q .
+  \label{eq:num}
+\end{equation}
+Substituting \eqref{eq:num} into \eqref{eq:exact} yields the rate
+\eqref{eq:rate}, which holds surely (hence almost surely) for every $T\ge1$ and
+tends to $0$ as $T\to\infty$. Therefore
+$\frac{1}{T}\sum_{t=1}^{T}\err_t\to\alpha$ almost surely. Finally, by the
+definition \eqref{eq:err} of $\err_t$,
+\[
+  \frac{1}{T}\sum_{t=1}^{T}\err_t
+  =\frac{1}{T}\sum_{t=1}^{T}
+   \Bigl(1-\prod_{j=1}^{H}\ind\{x_t^{j}\in C_t^{j}\}\Bigr)
+  =1-\frac{1}{T}\sum_{t=1}^{T}\prod_{j=1}^{H}\ind\{x_t^{j}\in C_t^{j}\},
+\]
+which gives \eqref{eq:main} and the two equivalent formulations, in particular
+$\frac{1}{T}\sum_{t=1}^{T}\prod_{j=1}^{H}\ind\{x_t^{j}\in C_t^{j}\}\to1-\alpha$
+almost surely. No property of the joint law of $\{(X_t,Y_t)\}_{t\ge1}$ was used:
+the only inputs are $\err_t\in\{0,1\}$, the update \eqref{eq:update}, and
+Lemma~\ref{lem:saturation}.
+\end{proof}
+
+\section{Remarks on scope and variants}
+\label{sec:remarks}
+
+\begin{remark}[The adaptive argument is indicator-agnostic --- and this is why
+the corrected theorem holds verbatim]
+\label{rem:agnostic}
+The proof of Theorem~\ref{thm:main} uses only that (i) the monitored signal is
+binary and (ii) it saturates consistently with the level, i.e.\
+Lemma~\ref{lem:saturation}. Both properties hold for the joint indicator
+\eqref{eq:err}: an infinite box covers \emph{all} coordinates, and an empty box
+covers \emph{none}. Hence the scheme drives to $\alpha$ exactly the frequency of
+whichever miscoverage event is fed into \eqref{eq:update}; feeding the joint
+event $\{Y_t\notin C_t\}$ --- as Eq.~(18)/Algorithm~1 do --- controls the
+long-run frequency of the full-horizon event of Eq.~(1) at $1-\alpha$. This is
+also why the correction does not alter the algorithm, the implementation, or any
+reported number: only the displayed summand of the theorem changes.
+\end{remark}
+
+\begin{remark}[Per-horizon (marginal) variant]
+\label{rem:perstep}
+If one prefers per-lead-time validity, $\PR[x_t^{j}\in C_t^{j}]\ge1-\alpha$ for
+each $j\in\horizon$ separately, it suffices to run $H$ independent copies of
+\eqref{eq:update} on the marginal indicators
+$\err_t^{j}:=\ind\{x_t^{j}\notin C_t^{j}\}$, with levels
+$\alpha_t^{1},\dots,\alpha_t^{H}$. Lemma~\ref{lem:saturation} and the proof of
+Theorem~\ref{thm:main} apply unchanged to each $j$, giving
+$\frac{1}{T}\sum_{t\le T}\err_t^{j}\to\alpha$ a.s.\ for every $j$. The joint
+and marginal targets are genuinely different objectives --- by a union bound the
+joint miscoverage of $H$ marginally valid intervals can be as large as
+$\min\{H\alpha,1\}$ --- and \textsc{E3Former} targets the joint one, which is
+the relevant notion for provisioning decisions that must hold over an entire
+scaling window.
+\end{remark}
+
+\begin{remark}[Nature of the guarantee]
+\label{rem:nature}
+Theorem~\ref{thm:main} is a statement about the \emph{long-run time-average}
+frequency of joint coverage, with the finite-$T$ deviation bound
+\eqref{eq:rate}; like all adaptive-conformal guarantees
+\cite{gibbs2021} it does not assert per-step marginal or conditional validity,
+and it is
+complementary to the finite-sample bound of Proposition~\ref{prop:fixed},
+which is exact for a fixed level but requires exchangeability. The trade-off
+governed by $\gamma_Q$ is visible in \eqref{eq:rate}: a larger $\gamma_Q$
+shrinks the $O(1/(\gamma_Q T))$ deviation but increases the oscillation of
+$\alpha_t$, which empirically narrows the average interval width and can pull
+the finite-horizon coverage away from $1-\alpha$ --- consistent with the
+sensitivity study of Fig.~8 in the main paper.
+\end{remark}
+
+\section{Resulting edits to the paper}
+\label{sec:edits}
+
+\begin{enumerate}[label=(\roman*),leftmargin=*]
+  \item \textbf{Eq.~(1) and Definition~3.} Move the indicator outside the
+        probability and disambiguate the lead-time index, writing the joint
+        event as
+        $\PR\bigl(x_{t+j}\in c_{t+j},\ \forall j\in\horizon\bigr)\ge1-\alpha$,
+        i.e.\ $\PR(Y_t\in C_t)\ge1-\alpha$, with
+        $C_t=c_{t+1}\times\cdots\times c_{t+H}$ a box of $H$ (not $H+1$)
+        intervals, aligned with the notation of Definition~2 of the main paper.
+  \item \textbf{Theorem~2 (main paper) / Theorem~1 (supplement).} Replace the
+        summand $\prod_{j=1}^{H}\ind\{x_t^{j}\notin C_t^{j}\}$ by the joint
+        miscoverage indicator, giving \eqref{eq:main}; add the finite-$T$ rate
+        \eqref{eq:rate}.
+  \item \textbf{Eq.~(18) and Algorithm~1, line~9.} Define
+        $\err_t:=\ind\{Y_t\notin C_t\}
+        =1-\prod_{j=1}^{H}\ind\{x_t^{j}\in C_t^{j}\}$ explicitly, so that the
+        monitored event is unambiguously the complement of Eq.~(1).
+  \item \textbf{Eq.~(15)--(16).} Adopt the lower-orthant empirical copula
+        \eqref{eq:copula} with the constraint $\widehat{Q}(u^{*})\ge1-\alpha_t$
+        in \eqref{eq:ustar}, matching the multivariate quantile
+        $Q(U;\alpha)$ used in the proof (Remark~\ref{rem:eq1516}).
+  \item \textbf{Supplement.} Restate the intermediate claim
+        ``$\PR[y_j\in C_j]\ge1-\alpha,\ \forall j$'' as the joint statement
+        $\PR[Y_t\in C_t]\ge1-\alpha$ of Proposition~\ref{prop:fixed}, which is
+        what the displayed chain of equivalences \eqref{eq:reduction} actually
+        establishes; add the saturation conventions of
+        Definition~\ref{def:conventions} and Lemma~\ref{lem:saturation}.
+  \item \textbf{Metrics.} State explicitly that the reported average coverage
+        ratio (ACR) is computed with the same indicator as
+        \eqref{eq:err}, so that the empirical ACR and the theoretical target
+        $1-\alpha$ refer to the same event.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem{gibbs2021}
+I.~Gibbs and E.~Cand\`es.
+\newblock Adaptive conformal inference under distribution shift.
+\newblock \emph{Advances in Neural Information Processing Systems (NeurIPS)},
+34:1660--1672, 2021.
+
+\bibitem{sunyu2024}
+S.~Sun and R.~Yu.
+\newblock Copula conformal prediction for multi-step time series forecasting.
+\newblock \emph{International Conference on Learning Representations (ICLR)},
+2024.
+
+\bibitem{vovk2005}
+V.~Vovk, A.~Gammerman, and G.~Shafer.
+\newblock \emph{Algorithmic Learning in a Random World}, volume 29.
+\newblock Springer, 2005.
+
+\bibitem{vovk2017}
+V.~Vovk, J.~Shen, V.~Manokhin, and M.~Xie.
+\newblock Nonparametric predictive distributions based on conformal prediction.
+\newblock In \emph{Conformal and Probabilistic Prediction and Applications},
+pages 82--102, 2017.
+\end{thebibliography}
+
+\end{document}
